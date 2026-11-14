@@ -20,6 +20,9 @@
 //
 // NX2NAVI_GYRO_DEADZONE (live, degrees a second, 0 = none): a turn slower than this is dropped and a faster one loses
 // this much of its speed, so the turn grows from nothing past the edge instead of jumping.
+// NX2NAVI_GYRO_TIGHTEN (live, degrees a second, 0 = none), after the dead zone: a turn slower than this is scaled down
+// in proportion to its speed (half the threshold turns at half speed), one at or above it is untouched, so a held
+// controller's tremor fades without an edge while a deliberate turn keeps its speed.
 // NX2NAVI_GYRO_TOUCH_HOLD (live, default on): while a finger rests on the gamepad's touchpad (input.c motion_main
 // reads it) nothing is turned, so the controller can be brought back to the centre and the turn goes on from there
 // when the finger lifts, as a mouse is lifted off the desk.
@@ -51,7 +54,7 @@ void gyro_player_space(const double w[3], const double up[3], double out[2]) {
 
 static int mode_player = -1, scope_aim;
 static double sens[2] = {2, 2};   // horizontal, vertical
-static double deadzone;           // degrees a second
+static double deadzone, tighten;  // degrees a second
 static int touch_hold = 1;
 static unsigned seen;
 
@@ -70,6 +73,8 @@ static void settings(void) {
     }
     double d = cfg_double("NX2NAVI_GYRO_DEADZONE");
     deadzone = d > 0 ? (d > 10 ? 10 : d) : 0;
+    double t = cfg_double("NX2NAVI_GYRO_TIGHTEN");
+    tighten = t > 0 ? (t > 10 ? 10 : t) : 0;
     touch_hold = cfg_bool("NX2NAVI_GYRO_TOUCH_HOLD");
 }
 
@@ -109,6 +114,8 @@ void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[
     gyro_player_space(w, up, ps);
     double speed = hypot(ps[0], ps[1]) * RAD_DEG;
     double keep = deadzone <= 0 ? 1 : speed > deadzone ? (speed - deadzone) / speed : 0;
+    double left = speed * keep;   // the speed past the dead zone
+    if (tighten > 0 && left < tighten) keep *= left / tighten;
     if (touched && touch_hold) keep = 0;   // the ratchet: the controller moves, the camera stays
     for (int i = 0; i < 2; i++) ps[i] *= keep;
     if (last_take && now - last_take > STALE_NS) pending[0] = pending[1] = 0;

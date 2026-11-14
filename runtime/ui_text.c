@@ -358,6 +358,10 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     [UI_MENU_GYRO_DEADZONE] = "Gyro dead zone",
     [UI_MENU_GYRO_DEADZONE_DESC] = "Player space: turns slower than this many degrees a second are ignored, and faster "
                                    "turns lose this much speed so there is no jump at the edge. 0 is none.",
+    [UI_MENU_GYRO_TIGHTEN] = "Gyro tightening",
+    [UI_MENU_GYRO_TIGHTEN_DESC] = "Player space: turns slower than this many degrees a second are slowed in "
+                                  "proportion, so hand tremor fades out smoothly while faster turns keep their full "
+                                  "speed. Works on top of the dead zone. 0 is none; 1 to 1.5 is a light setting.",
     [UI_MENU_SPRINT_BUTTON] = "Sprint button",
     [UI_MENU_SPRINT_BUTTON_DESC] = "A button that makes Link sprint without rolling first. L3, the left stick's "
                                    "click, has no other use. The game's B button sprints only while Link moves and "

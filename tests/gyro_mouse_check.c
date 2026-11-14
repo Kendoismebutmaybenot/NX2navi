@@ -9,7 +9,7 @@
 #include "gyro_mouse.c"
 
 static const char *mode = "player", *scope = "always";
-static double sens_value = 1, sens_y = 1, deadzone_value = 0;
+static double sens_value = 1, sens_y = 1, deadzone_value = 0, tighten_value = 0;
 static int touch, touch_hold_value = 1;
 static unsigned version = 1;
 static int motion_on = 1, patch_on = 1;
@@ -20,7 +20,8 @@ const char *cfg_value(const char *name) {
 }
 double cfg_double(const char *name) {
     return !strcmp(name, "NX2NAVI_GYRO_SENS_X") ? sens_value : !strcmp(name, "NX2NAVI_GYRO_SENS_Y") ? sens_y
-         : !strcmp(name, "NX2NAVI_GYRO_DEADZONE") ? deadzone_value : 0;
+         : !strcmp(name, "NX2NAVI_GYRO_DEADZONE") ? deadzone_value
+         : !strcmp(name, "NX2NAVI_GYRO_TIGHTEN") ? tighten_value : 0;
 }
 int cfg_bool(const char *name) { return strcmp(name, "NX2NAVI_GYRO_TOUCH_HOLD") ? 0 : touch_hold_value; }
 int input_motion_enabled(void) { return motion_on; }
@@ -126,6 +127,24 @@ int main(void) {
     run((const double[3]){0, -30 * DEG, 0}, upright, 1, deg);
     assert(near(deg[0], 25, 0.5));
     deadzone_value = 0, version++;
+
+    // tightening of 2 degrees a second: a turn of 1 goes at half speed, a turn of 30 is untouched; on top of a dead zone
+    // of 5 it acts on what is past the dead zone (a turn of 6 leaves 1, halved)
+    tighten_value = 2, version++;
+    run((const double[3]){0, 0, 0}, upright, 0.1, warm);
+    deg[0] = deg[1] = 0;
+    run((const double[3]){0, -1 * DEG, 0}, upright, 1, deg);
+    assert(near(deg[0], 0.5, 0.05));
+    deg[0] = deg[1] = 0;
+    run((const double[3]){0, -30 * DEG, 0}, upright, 1, deg);
+    assert(near(deg[0], 30, 0.5));
+    deadzone_value = 5, version++;
+    bias[0] = bias[1] = bias[2] = 0, still_s = 0;   // the turn of 1 was slow enough to count as still and teach bias
+    run((const double[3]){0, 0, 0}, upright, 0.1, warm);
+    deg[0] = deg[1] = 0;
+    run((const double[3]){0, -6 * DEG, 0}, upright, 1, deg);
+    assert(near(deg[0], 0.5, 0.05));
+    deadzone_value = 0, tighten_value = 0, version++;
 
     // a finger on the touchpad holds the turn; lifted, the turn goes on; with the setting off the finger does nothing
     touch = 1;
