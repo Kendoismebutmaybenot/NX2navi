@@ -277,7 +277,7 @@ static const CfgMeta metas[] = {
     // gyro_mouse.c: player space gyro through the mouse camera instead of the game's own gyro aiming
     {"GYRO_MODE", "game", "game|player", LIVE}, {"GYRO_SCOPE", "always", "always|aim", LIVE},
     {"GYRO_SENS_X", "2", "0.1..10", LIVE}, {"GYRO_SENS_Y", "2", "0.1..10", LIVE},
-    {"GYRO_TOUCH_HOLD", "1", "0|1", LIVE}, {"GYRO_DEADZONE", "0", "0..10", LIVE}, {"GYRO_TIGHTEN", "0", "0..10", LIVE},
+    {"GYRO_TOUCH_HOLD", "1", "0|1", LIVE}, {"GYRO_DEADZONE", "0", "0..10", LIVE}, {"GYRO_TIGHTEN", "1.5", "0..10", LIVE},
     {"MOTION", "1", "0|1", LIVE}, {"RUMBLE_STRENGTH", "130", "0..300", LIVE}, {"RUMBLE_CURVE", "0.6", "0.2..1.5", LIVE},
     {"RUMBLE_TRIGGERS", "0", "0|1", LIVE}, {"PAD_LAYOUT", "nintendo", "auto|nintendo|xbox|playstation", LIVE},
     {"DS3", "0", "0|1", LIVE},   // input_ds3_win.c ds3_read: read a DualShock 3 directly; off: no HID scan

@@ -20,7 +20,7 @@
 //
 // NX2NAVI_GYRO_DEADZONE (live, degrees a second, 0 = none): a turn slower than this is dropped and a faster one loses
 // this much of its speed, so the turn grows from nothing past the edge instead of jumping.
-// NX2NAVI_GYRO_TIGHTEN (live, degrees a second, 0 = none), after the dead zone: a turn slower than this is scaled down
+// NX2NAVI_GYRO_TIGHTEN (live, degrees a second, default 1.5, 0 = none), after the dead zone: a turn slower than this is scaled down
 // in proportion to its speed (half the threshold turns at half speed), one at or above it is untouched, so a held
 // controller's tremor fades without an edge while a deliberate turn keeps its speed.
 // NX2NAVI_GYRO_TOUCH_HOLD (live, default on): while a finger rests on the gamepad's touchpad (input.c motion_main
@@ -54,7 +54,7 @@ void gyro_player_space(const double w[3], const double up[3], double out[2]) {
 
 static int mode_player = -1, scope_aim;
 static double sens[2] = {2, 2};   // horizontal, vertical
-static double deadzone, tighten;  // degrees a second
+static double deadzone, tighten = 1.5;  // degrees a second
 static int touch_hold = 1;
 static unsigned seen;
 
