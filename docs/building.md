@@ -500,7 +500,7 @@ A change to player space gyro (`runtime/gyro_mouse.c`, its feed in `runtime/inpu
 `runtime/mouse_direct.c` `camera_input_oot`) passes `python tests\gyro_mouse_check.py`, which builds `gyro_mouse.c` with
 the rest of the runtime stubbed: the yaw of a turn about the vertical with the controller flat, upright and between,
 the yaw a sideways roll adds, pitch, the sensitivity, the bias a still controller loses (and a real turn does not
-teach), slow noise held back, the turn made while nothing takes it dropped, and the settings that gate it. No game
+teach), the turn made while nothing takes it dropped, and the settings that gate it. No game
 files.
 
 A change to the text speed (`runtime/text_speed.c`, the set `text_speed` of `recomp/patches-v111.txt`, its call in

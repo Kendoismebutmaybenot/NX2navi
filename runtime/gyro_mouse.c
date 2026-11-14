@@ -1,8 +1,8 @@
 // Player space gyro (NX2NAVI_GYRO_MODE=player, live): the gamepad's gyro turns the camera through the mouse camera's
 // path (mouse_direct.c camera_input_oot) instead of reaching the game as its six-axis sensor. Yaw follows the turn
 // about the real vertical, wherever the controller points: the turn about gravity, measured on the controller's two
-// axes other than its pitch axis (x), then let out up to 1.41 times its size but never past the combined rate of those
-// two axes, so a turn the hands make by rolling the controller sideways counts as well as one made by twisting it
+// axes other than its pitch axis (x), then let out up to twice its size (a 60 degree buffer) but never past the
+// combined rate of those two axes, so a turn the hands make by rolling the controller sideways counts as well as one made by twisting it
 // flat. Pitch is the turn about the controller's own x axis. Holding the controller flat, upright or anywhere between
 // then turns the camera the same way for the same movement of the hands.
 //
@@ -15,8 +15,8 @@
 //
 // A still controller is not quite still in its readings: its gyro has a small bias. While the controller lies or is
 // held still (gravity alone on the accelerometer, the rate under STILL_RATE) for STILL_SECONDS, the rate is averaged into
-// the bias, which every sample loses. Rates under TIGHTEN_DEG_S are scaled down in proportion to their size, so what
-// remains of the noise does not creep the camera; a deliberate turn is far faster.
+// the bias, which every sample loses. Nothing else is done to the rate: no dead zone, no smoothing, no slow-speed
+// scaling, so the camera turns exactly with the controller.
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
@@ -26,12 +26,11 @@
 #include "input.h"
 #include "platform/platform.h"
 
-#define YAW_RELAX 1.41
+#define YAW_RELAX 2.0
 #define STILL_RATE 0.06        // rad/s (3.4 degrees a second)
 #define STILL_ACC 0.03         // G off 1
 #define STILL_SECONDS 1.0
 #define BIAS_SECONDS 2.0       // the bias average's time constant once still
-#define TIGHTEN_DEG_S 1.5
 #define STALE_NS 100000000ull  // no take for this long (a menu, a load): the turn gathered meanwhile is dropped
 #define RAD_DEG (180.0 / M_PI)
 
@@ -94,11 +93,9 @@ void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[
     } else still_s = 0;
     double ps[2];
     gyro_player_space(w, up, ps);
-    double speed = hypot(ps[0], ps[1]) * RAD_DEG;
-    double tighten = speed < TIGHTEN_DEG_S ? speed / TIGHTEN_DEG_S : 1;
     if (last_take && now - last_take > STALE_NS) pending[0] = pending[1] = 0;
     else
-        for (int i = 0; i < 2; i++) pending[i] += ps[i] * RAD_DEG * tighten * dt;
+        for (int i = 0; i < 2; i++) pending[i] += ps[i] * RAD_DEG * dt;
     plat_mutex_unlock(&lock);
 }
 

@@ -1,6 +1,6 @@
 // Player space gyro (runtime/gyro_mouse.c) with the rest of the runtime stubbed: the yaw a turn about the vertical makes
 // with the controller held flat, upright and tilted between; the yaw a sideways roll adds; pitch; the sensitivity; the
-// bias a still controller loses; slow noise held back; the turn dropped while nothing takes it; the setting gates.
+// bias a still controller loses; the turn dropped while nothing takes it; the setting gates.
 // Built by tests/gyro_mouse_check.py.
 #include <assert.h>
 #include <math.h>
@@ -55,7 +55,7 @@ int main(void) {
     assert(near(out[0], -1, 1e-9));
     // held flat, a sideways roll (about the top edge's axis) adds yaw, up to the relaxed share of the combined rate
     gyro_player_space((const double[3]){0, 1, 0}, tilt, out);
-    assert(near(out[0], -sqrt(0.5) * 1.41, 1e-9));   // let out 1.41 times, just under the combined rate 1
+    assert(near(out[0], -1, 1e-9));                     // let out twice: sqrt(0.5) * 2 passes the combined rate 1
     gyro_player_space((const double[3]){0, 1, 0.3}, tilt, out);
     assert(near(out[0], -hypot(1, 0.3), 1e-9));        // here the combined rate is the limit
     gyro_player_space((const double[3]){0, 0.2, 0}, flat, out);
@@ -90,11 +90,11 @@ int main(void) {
     assert(near(deg[0], 60, 1) && near(deg[1], 40, 1));
     sens_value = 1, version++;
 
-    // a still controller with a bias of 1 degree a second: two thirds of it held back at once (under 1.5 degrees a
-    // second), and learnt within a few seconds
+    // a still controller with a bias of 1 degree a second: no slow rate is held back, so most of it gets through in the
+    // first second (the bias is learnt once it has been still for a second), and it is learnt within a few seconds
     deg[0] = deg[1] = 0;
     run((const double[3]){0, 0, 1 * DEG}, flat, 1, deg);
-    assert(fabs(deg[0]) < 0.7);
+    assert(deg[0] < -0.6);
     run((const double[3]){0, 0, 1 * DEG}, flat, 8, warm);
     assert(near(bias[2], 1 * DEG, 0.1 * DEG));
     deg[0] = deg[1] = 0;
