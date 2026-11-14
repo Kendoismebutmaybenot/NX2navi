@@ -44,7 +44,7 @@ void gyro_player_space(const double w[3], const double up[3], double out[2]) {
 }
 
 static int mode_player = -1, scope_aim;
-static double sens = 2;
+static double sens[2] = {2, 2};   // horizontal, vertical
 static unsigned seen;
 
 static void settings(void) {
@@ -55,8 +55,11 @@ static void settings(void) {
     mode_player = m && !strcmp(m, "player");
     const char *g = cfg_value("NX2NAVI_GYRO_SCOPE");
     scope_aim = g && !strcmp(g, "aim");
-    double s = cfg_double("NX2NAVI_GYRO_SENS");
-    sens = s < 0 ? 0 : s > 10 ? 10 : s;
+    static const char *const names[2] = {"NX2NAVI_GYRO_SENS_X", "NX2NAVI_GYRO_SENS_Y"};
+    for (int i = 0; i < 2; i++) {
+        double s = cfg_double(names[i]);
+        sens[i] = s < 0 ? 0 : s > 10 ? 10 : s;
+    }
 }
 
 int gyro_mouse_on(void) {
@@ -105,8 +108,8 @@ int gyro_mouse_take(double deg[2]) {
     plat_mutex_lock(&lock);
     int fresh = last_take && now - last_take <= STALE_NS;
     last_take = now;
-    deg[0] = fresh ? pending[0] * sens : 0;
-    deg[1] = fresh ? pending[1] * sens : 0;
+    deg[0] = fresh ? pending[0] * sens[0] : 0;
+    deg[1] = fresh ? pending[1] * sens[1] : 0;
     pending[0] = pending[1] = 0;
     plat_mutex_unlock(&lock);
     return deg[0] != 0 || deg[1] != 0;

@@ -346,9 +346,12 @@ static const char *const text_en[UI_TEXT_COUNT] = {
                                 "allows turns it only while the game aims an item, where the game's own gyro "
                                 "aiming would be on.",
     [UI_MENU_GYRO_ALWAYS] = "Always", [UI_MENU_GYRO_AIM] = "When the game allows",
-    [UI_MENU_GYRO_SENS] = "Gyro sensitivity",
-    [UI_MENU_GYRO_SENS_DESC] = "Player space: degrees the camera turns for each degree the controller turns. The "
-                               "game's camera sensitivity options scale it as well.",
+    [UI_MENU_GYRO_SENS_X] = "Horizontal sensitivity",
+    [UI_MENU_GYRO_SENS_X_DESC] = "Player space: degrees the camera turns left or right for each degree the controller "
+                                 "turns. The game's camera sensitivity options scale it as well.",
+    [UI_MENU_GYRO_SENS_Y] = "Vertical sensitivity",
+    [UI_MENU_GYRO_SENS_Y_DESC] = "Player space: degrees the camera turns up or down for each degree the controller "
+                                 "tilts. The game's camera sensitivity options scale it as well.",
     [UI_MENU_SPRINT_BUTTON] = "Sprint button",
     [UI_MENU_SPRINT_BUTTON_DESC] = "A button that makes Link sprint without rolling first. L3, the left stick's "
                                    "click, has no other use. The game's B button sprints only while Link moves and "

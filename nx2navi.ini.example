@@ -862,12 +862,13 @@
 # motion = 1
 # rumble = 1
 # Motion style: game (the default, the game's own gyro aiming) or player (player space: the gyro turns the camera like
-# a mouse, the same way however the controller is held). gyro_sens: degrees the camera turns for each
-# degree the controller turns with player, 0.1 to 10. gyro_scope with player: always (the default) or aim (only while
-# the game aims an item, where its own gyro aiming would be on).
+# a mouse, the same way however the controller is held). gyro_sens_x and gyro_sens_y: degrees the camera turns left or
+# right, and up or down, for each degree the controller turns with player, 0.1 to 10. gyro_scope with player: always
+# (the default) or aim (only while the game aims an item, where its own gyro aiming would be on).
 # gyro_mode = game
 # gyro_scope = always
-# gyro_sens = 2
+# gyro_sens_x = 2
+# gyro_sens_y = 2
 # Sprint button (game 1.1.1): Link sprints without rolling first. off (the default), l3 (the left stick's click, which
 # has no other use) or b (the game's B button, the bottom one of the Nintendo layout: it sprints only while Link moves
 # and puts the weapon away as usual otherwise; with the game's Swap Jump Controls B is the jump, so use l3). sprint_mode: toggle (press to sprint and again to stop; the sprint

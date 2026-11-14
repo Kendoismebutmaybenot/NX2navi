@@ -9,7 +9,7 @@
 #include "gyro_mouse.c"
 
 static const char *mode = "player", *scope = "always";
-static double sens_value = 1;
+static double sens_value = 1, sens_y = 1;
 static unsigned version = 1;
 static int motion_on = 1, patch_on = 1;
 static uint64_t clock_ns = 1000000000ull;
@@ -17,7 +17,9 @@ unsigned cfg_version(void) { return version; }
 const char *cfg_value(const char *name) {
     return !strcmp(name, "NX2NAVI_GYRO_MODE") ? mode : !strcmp(name, "NX2NAVI_GYRO_SCOPE") ? scope : "";
 }
-double cfg_double(const char *name) { return strcmp(name, "NX2NAVI_GYRO_SENS") ? 0 : sens_value; }
+double cfg_double(const char *name) {
+    return !strcmp(name, "NX2NAVI_GYRO_SENS_X") ? sens_value : !strcmp(name, "NX2NAVI_GYRO_SENS_Y") ? sens_y : 0;
+}
 int input_motion_enabled(void) { return motion_on; }
 int input_direct_mouse_available(void) { return patch_on; }
 uint64_t plat_now_ns(void) { return clock_ns; }
@@ -84,11 +86,16 @@ int main(void) {
     run((const double[3]){0, -30 * DEG, 0}, upright, 1, deg);
     assert(near(deg[0], 30, 0.5) && near(deg[1], 0, 1e-6));
     // twice the sensitivity, twice the turn; and 20 degrees up
-    sens_value = 2, version++;
+    sens_value = 2, sens_y = 2, version++;
     deg[0] = deg[1] = 0;
     run((const double[3]){20 * DEG, -30 * DEG, 0}, upright, 1, deg);
     assert(near(deg[0], 60, 1) && near(deg[1], 40, 1));
-    sens_value = 1, version++;
+    // the horizontal and vertical sensitivities apply to their own axis alone
+    sens_value = 3, sens_y = 0.5, version++;
+    deg[0] = deg[1] = 0;
+    run((const double[3]){20 * DEG, -30 * DEG, 0}, upright, 1, deg);
+    assert(near(deg[0], 90, 1.5) && near(deg[1], 10, 0.5));
+    sens_value = 1, sens_y = 1, version++;
 
     // a still controller with a bias of 1 degree a second: no slow rate is held back, so most of it gets through in the
     // first second (the bias is learnt once it has been still for a second), and it is learnt within a few seconds
