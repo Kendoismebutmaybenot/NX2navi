@@ -358,7 +358,10 @@ static int mouse_trace(void) {
 // comes from the actor manager ([[main+0x4c7e0d0]], class main+0x4bdfe68) at +0x470 (class main+0x4b49698), whose
 // +0x18 is Link's owner; his state id is at [[[owner +0x270] +0x188] +0x1c0] +0x28 (+0x4c when that reads 0x11a, a
 // state that wraps another), as sprint.c state_kind reads it. The ids follow the game's state name table
-// (main+0x4b4abc8, one name pointer per id). Every change of the answer is logged with the id, for checking in game.
+// (main+0x4b4abc8, one name pointer per id). Every change of state is logged with its id and name, for checking in game
+// which states an aim uses.
+#define STATE_NAMES 0x4b4abc8ull
+#define STATE_COUNT 282
 static uint64_t guest_load64(uint64_t a) { return a && mem_readable(a, 8) ? guest_pointer(a) : 0; }
 static int link_aiming(void) {
     uint64_t slot = guest_load64(MOD_MAIN_BASE + 0x4c7e0d0), mgr = guest_load64(slot), p = 0;
@@ -381,13 +384,18 @@ static int link_aiming(void) {
     case 59:    // UseBow
     case 60:    // UseTool: the slingshot and the other items aimed in first person
     case 72:    // LookAround: the first-person view
+    case 121:   // RangedAttack: aiming in third person
     case 181:   // DrawnBow
+    case 238:   // UseItem: aiming an item in third person
         aiming = 1;
     }
-    static int last = -1;
-    if (aiming != last) {
-        last = aiming;
-        rt_log("gyro: Link state %d, %s", id, aiming ? "aiming: the gyro turns the camera" : "not aiming");
+    static int32_t last = -1;
+    if (id != last) {
+        last = id;
+        const char *name = "?";
+        uint64_t s = id >= 0 && id < STATE_COUNT ? guest_load64(MOD_MAIN_BASE + STATE_NAMES + (uint64_t)id * 8) : 0;
+        if (s && mem_readable(s, 1)) name = (const char *)(uintptr_t)s;
+        rt_log("gyro: Link state %d %.40s, %s", id, name, aiming ? "aiming: the gyro turns the camera" : "not aiming");
     }
     return aiming;
 }
@@ -422,7 +430,8 @@ static void camera_input_oot(Cpu *c) {
     // degree up and 1.78 sideways a frame. Taken also while the camera takes no input or Link does not aim (with
     // NX2NAVI_GYRO_SCOPE=aim), so no turn waits for it.
     double gyro[2];
-    if (gyro_mouse_on() && gyro_mouse_take(gyro) && usable && (!gyro_mouse_aim_only() || link_aiming())) {
+    int gyro_on = gyro_mouse_on(), gyro_allowed = gyro_on && (!gyro_mouse_aim_only() || link_aiming());
+    if (gyro_on && gyro_mouse_take(gyro) && usable && gyro_allowed) {
         add[0] += (float)(gyro[0] * (INPUT_OOT_COUNT_X / INPUT_OOT_COUNT_Y) / per);
         add[1] += (float)(gyro[1] / per);
     }

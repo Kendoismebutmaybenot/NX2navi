@@ -864,7 +864,7 @@
 # Motion style: game (the default, the game's own gyro aiming) or player (player space: the gyro turns the camera like
 # a mouse, the same way however the controller is held). gyro_sens: degrees the camera turns for each
 # degree the controller turns with player, 0.1 to 10. gyro_scope with player: always (the default) or aim (only while
-# Link aims the bow, slingshot or hookshot or looks in first person, where the game's own gyro aiming works).
+# Link aims the bow, slingshot or hookshot, in first or third person, or looks in first person).
 # gyro_mode = game
 # gyro_scope = always
 # gyro_sens = 2
