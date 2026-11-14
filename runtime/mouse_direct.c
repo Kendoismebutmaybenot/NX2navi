@@ -384,8 +384,8 @@ static int link_aiming(void) {
     case 59:    // UseBow
     case 60:    // UseTool: the slingshot and the other items aimed in first person
     case 72:    // LookAround: the first-person view
-    case 121:   // RangedAttack: aiming in third person
     case 181:   // DrawnBow
+    // not 121, RangedAttack: throwing a Deku Nut, which the game does not aim with the gyro
     case 238:   // UseItem: aiming an item in third person
         aiming = 1;
     }
