@@ -8,8 +8,8 @@
 //
 // The sensor thread (input.c motion_main, 250 Hz) feeds each sample with the fusion's up direction
 // (motion_fusion.c motion_up); the camera input update takes the turn gathered since its last call, in degrees.
-// NX2NAVI_GYRO_SCOPE (live): always, or aim, only while Link is in a state the game's own gyro aiming works in
-// (mouse_direct.c link_aiming).
+// NX2NAVI_GYRO_SCOPE (live): always, or aim, only while the game's aiming camera is on (mouse_direct.c camera_aiming),
+// where the game would turn its own gyro aiming on.
 // While the game's six-axis sensor would read it, the sensor reads at rest instead (ov_input.c six_fill), so the
 // game's own gyro aiming does not add a second turn.
 //
@@ -76,6 +76,7 @@ static double bias[3], still_s;
 static uint64_t last_feed, last_take;
 
 void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[3]) {
+    settings();
     uint64_t now = plat_now_ns();
     plat_mutex_lock(&lock);
     double dt = last_feed && now > last_feed ? (double)(now - last_feed) / 1e9 : 0;

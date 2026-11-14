@@ -7,7 +7,8 @@ int gyro_mouse_on(void);
 // One sensor sample (input.c motion_main): acceleration in G, rate in rad/s, both in the Switch controller frame, and
 // the fusion's up direction in that frame.
 void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[3]);
-// 1 while NX2NAVI_GYRO_SCOPE is aim: the turn counts only while Link aims (mouse_direct.c link_aiming).
+// 1 while NX2NAVI_GYRO_SCOPE is aim: the turn counts only while the game's aiming camera is on (mouse_direct.c
+// camera_aiming).
 int gyro_mouse_aim_only(void);
 // The camera turn gathered since the last call, in degrees (right, up), times NX2NAVI_GYRO_SENS; 1 when nonzero.
 int gyro_mouse_take(double deg[2]);

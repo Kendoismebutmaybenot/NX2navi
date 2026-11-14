@@ -343,8 +343,8 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     [UI_MENU_GYRO_GAME] = "Game", [UI_MENU_GYRO_PLAYER] = "Player space",
     [UI_MENU_GYRO_SCOPE] = "Gyro active",
     [UI_MENU_GYRO_SCOPE_DESC] = "Player space: Always turns the camera with the gyro at all times. When the game "
-                                "allows turns it only while aiming: the bow, slingshot or hookshot, in first or "
-                                "third person, and the first-person view.",
+                                "allows turns it only while the game aims an item, where the game's own gyro "
+                                "aiming would be on.",
     [UI_MENU_GYRO_ALWAYS] = "Always", [UI_MENU_GYRO_AIM] = "When the game allows",
     [UI_MENU_GYRO_SENS] = "Gyro sensitivity",
     [UI_MENU_GYRO_SENS_DESC] = "Player space: degrees the camera turns for each degree the controller turns. The "
