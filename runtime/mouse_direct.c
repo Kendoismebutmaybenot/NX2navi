@@ -360,34 +360,47 @@ static int mouse_trace(void) {
 // (+0xf84 of the controlled Link) reads 3 while it (or the slingshot) is drawn, 4 while the hookshot aims and 5 while
 // the boomerang aims. It is the item or action in use rather than an aim flag: a sword swing sets 1 or 2, so only 3, 4
 // and 5 count; it reads 0 while shielding, locked on or walking. While either is set this update's processed stick turns Link and the aim, one stick
-// sideways about 110 degrees a second as it turns the camera, so the gyro's degrees reach the aim unchanged. Bit 30 is
-// set only for the moment of a shot and bit 47 for a lock-on. Each change is logged.
+// sideways about 110 degrees a second as it turns the camera, so the gyro's degrees reach the aim unchanged. The
+// fishing rod sets neither: Link's fishing word (+0xe58) has bit 10 set while he holds the rod and one bit for each
+// phase of a cast, bit 24 while ZR holds its aim (25 the throw, 27 the lure flying, 28 the line in the water, 29 and 30
+// reeling and a fish on). Bit 37 of the settings word is set from the throw while the line is out, so it is not the
+// aim. Bit 30 of the settings word is set only for the moment of a shot and bit 47 for a lock-on. Each change is
+// logged.
 #define OOT_CAMERA_SETTINGS 0x218
 #define OOT_CAMERA_AIMING (1ull << 32)
 #define OOT_ACTOR_MGR 0x4c7e0d0ull   // main offset: the actor manager's slot; +0x470 names the controlled Link
 #define OOT_LINK_VTABLE 0x4b4dfc0ull // main offset: Link's actor class
 #define OOT_LINK_AIM 0xf84
+#define OOT_LINK_FISHING 0xe58
+#define OOT_FISHING_ROD 0x400u          // the rod is in Link's hands
+#define OOT_FISHING_AIM 0x1000000u      // ... and ZR holds its cast's aim
 #define OOT_AIM_BOW 3
 #define OOT_AIM_HOOKSHOT 4
 #define OOT_AIM_BOOMERANG 5
 static uint64_t guest_ptr(uint64_t a) { return a && mem_readable(a, 8) ? *(const uint64_t *)(uintptr_t)a : 0; }
-// The controlled Link's aim word: [[[[[main+0x4c7e0d0]] +0x470] +0x18] +0x270] +0x358 is Link (his class checked), 0
-// when any step is missing.
-static int32_t link_aim(void) {
+// The controlled Link: [[[[[main+0x4c7e0d0]] +0x470] +0x18] +0x270] +0x358, his class checked; 0 when any step is
+// missing.
+static uint64_t controlled_link(void) {
     uint64_t p = guest_ptr(MOD_MAIN_BASE + OOT_ACTOR_MGR);
     const uint64_t steps[] = {0, 0x470, 0x18, 0x270, 0x358};
     for (size_t i = 0; i < sizeof steps / sizeof *steps && p; i++) p = guest_ptr(p + steps[i]);
-    if (!p || guest_ptr(p) != MOD_MAIN_BASE + OOT_LINK_VTABLE || !mem_readable(p + OOT_LINK_AIM, 4)) return 0;
-    int32_t aim;
-    memcpy(&aim, (const void *)(uintptr_t)(p + OOT_LINK_AIM), sizeof aim);
-    return aim;
+    return p && guest_ptr(p) == MOD_MAIN_BASE + OOT_LINK_VTABLE ? p : 0;
+}
+
+static uint32_t link_u32(uint64_t link, uint64_t off) {
+    uint32_t v = 0;
+    if (link && mem_readable(link + off, 4)) memcpy(&v, (const void *)(uintptr_t)(link + off), sizeof v);
+    return v;
 }
 static int camera_aiming(uint64_t object) {
     uint64_t word = 0;
     if (mem_readable(object + OOT_CAMERA_SETTINGS, 8)) memcpy(&word, (const void *)(uintptr_t)(object + OOT_CAMERA_SETTINGS), 8);
-    int32_t aim = link_aim();
+    uint64_t link = controlled_link();
+    int32_t aim = (int32_t)link_u32(link, OOT_LINK_AIM);
+    uint32_t fishing = link_u32(link, OOT_LINK_FISHING);
     int aiming = (word & OOT_CAMERA_AIMING) != 0 || aim == OOT_AIM_BOW || aim == OOT_AIM_HOOKSHOT ||
-                 aim == OOT_AIM_BOOMERANG;
+                 aim == OOT_AIM_BOOMERANG ||
+                 (fishing & (OOT_FISHING_ROD | OOT_FISHING_AIM)) == (OOT_FISHING_ROD | OOT_FISHING_AIM);
     static int last = -1;
     if (aiming != last) {
         last = aiming;
@@ -427,6 +440,7 @@ static void camera_input_oot(Cpu *c) {
     // NX2NAVI_GYRO_SCOPE=aim), so no turn waits for it.
     double gyro[2];
     int gyro_on = gyro_mouse_on(), gyro_allowed = gyro_on && (!gyro_mouse_aim_only() || camera_aiming(object));
+    if (gyro_on && gyro_mouse_aim_only()) gyro_mouse_set_aiming(gyro_allowed);   // the game's six-axis sensor follows
     if (gyro_on && gyro_mouse_take(gyro) && usable && gyro_allowed) {
         add[0] += (float)(gyro[0] * (INPUT_OOT_COUNT_X / INPUT_OOT_COUNT_Y) / per);
         add[1] += (float)(gyro[1] / per);

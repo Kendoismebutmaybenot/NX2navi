@@ -12,8 +12,10 @@
 // since its last call, in degrees.
 // NX2NAVI_GYRO_SCOPE (live): always, or aim, only while the game's aiming camera is on (mouse_direct.c camera_aiming),
 // where the game would turn its own gyro aiming on.
-// While the game's six-axis sensor would read it, the sensor reads at rest instead (ov_input.c six_fill), so the
-// game's own gyro aiming does not add a second turn.
+// While the player space gyro turns the camera, the game's six-axis sensor reads at rest instead (ov_input.c six_fill),
+// so the game's own gyro aiming does not add a second turn. With the aim scope it reads the real motion while no known
+// item aims (gyro_mouse_owns_sensor), so the game's own gyro aiming still covers an aimed item the player space gyro
+// does not detect, and never one it does.
 //
 // A still controller is not quite still in its readings: its gyro has a small bias. While the controller lies or is
 // held still (gravity alone on the accelerometer, the rate under STILL_RATE) for STILL_SECONDS, the rate is averaged into
@@ -88,6 +90,23 @@ int gyro_mouse_on(void) {
 int gyro_mouse_aim_only(void) {
     settings();
     return scope_aim;
+}
+
+// The camera input update runs every frame of gameplay; an answer older than this (a menu, a load) counts as no aim.
+#define AIMING_STALE_NS 100000000ull
+static volatile int aiming_now;
+static volatile uint64_t aiming_at;
+
+void gyro_mouse_set_aiming(int aiming) {
+    aiming_at = plat_now_ns();
+    aiming_now = aiming;
+}
+
+int gyro_mouse_owns_sensor(void) {
+    if (!gyro_mouse_on()) return 0;
+    if (!scope_aim) return 1;
+    uint64_t at = aiming_at, now = plat_now_ns();
+    return aiming_now && at && now - at <= AIMING_STALE_NS;
 }
 
 static PlatMutex lock = PLAT_MUTEX_INIT;
