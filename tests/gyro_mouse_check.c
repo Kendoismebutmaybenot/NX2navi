@@ -38,7 +38,7 @@ static void run(const double w[3], const double up[3], double seconds, double de
     double acc[3] = {-up[0], -up[1], -up[2]};
     for (int i = 0; i < (int)(seconds * 250 + 0.5); i++) {
         clock_ns += 4000000;
-        gyro_mouse_feed(acc, w, up, touch);
+        gyro_mouse_feed(acc, w, up, touch, 0.004);
         if (i % 4 == 3) {   // the camera takes at 60-ish Hz; sum what it got
             double d[2];
             gyro_mouse_take(d);
@@ -163,7 +163,7 @@ int main(void) {
 
     // nothing takes for a while (a menu): what was turned meanwhile is dropped, not added at once afterwards
     double acc[3] = {0, 0, -1}, w[3] = {0, 0, 1 * DEG + 90 * DEG};
-    for (int i = 0; i < 100; i++) clock_ns += 4000000, gyro_mouse_feed(acc, w, flat, 0);
+    for (int i = 0; i < 100; i++) clock_ns += 4000000, gyro_mouse_feed(acc, w, flat, 0, 0.004);
     double d[2];
     gyro_mouse_take(d);
     assert(d[0] == 0 && d[1] == 0);

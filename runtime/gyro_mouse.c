@@ -6,8 +6,10 @@
 // flat. Pitch is the turn about the controller's own x axis. Holding the controller flat, upright or anywhere between
 // then turns the camera the same way for the same movement of the hands.
 //
-// The sensor thread (input.c motion_main, 250 Hz) feeds each sample with the fusion's up direction
-// (motion_fusion.c motion_up); the camera input update takes the turn gathered since its last call, in degrees.
+// The sensor thread (input.c motion_main, every 4 ms) feeds every report the controller sent, each with the time since
+// the one before it by the controller's own clock and the fusion's up direction (motion_fusion.c motion_up), so no
+// report is skipped or counted twice whatever the controller's rate; the camera input update takes the turn gathered
+// since its last call, in degrees.
 // NX2NAVI_GYRO_SCOPE (live): always, or aim, only while the game's aiming camera is on (mouse_direct.c camera_aiming),
 // where the game would turn its own gyro aiming on.
 // While the game's six-axis sensor would read it, the sensor reads at rest instead (ov_input.c six_fill), so the
@@ -91,15 +93,13 @@ int gyro_mouse_aim_only(void) {
 static PlatMutex lock = PLAT_MUTEX_INIT;
 static double pending[2];   // degrees: right, up
 static double bias[3], still_s;
-static uint64_t last_feed, last_take;
+static uint64_t last_take;
 
-void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[3], int touched) {
+void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[3], int touched, double dt) {
     settings();
     uint64_t now = plat_now_ns();
     plat_mutex_lock(&lock);
-    double dt = last_feed && now > last_feed ? (double)(now - last_feed) / 1e9 : 0;
-    if (dt > 0.05) dt = 0;   // a gap: nothing turns across it
-    last_feed = now;
+    if (!(dt > 0) || dt > 0.05) dt = 0;   // the first sample, or a gap: nothing turns across it
     double a = sqrt(acc[0] * acc[0] + acc[1] * acc[1] + acc[2] * acc[2]), w[3];
     for (int i = 0; i < 3; i++) w[i] = gyro[i] - bias[i];
     double rate = sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2]);
