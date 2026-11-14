@@ -1727,6 +1727,8 @@ static void tab_controls(float scale) {
             opt_choice("NX2NAVI_GYRO_SCOPE", UI_MENU_GYRO_SCOPE, gyro_scope, 2, UI_MENU_GYRO_SCOPE_DESC);
             opt_slider("NX2NAVI_GYRO_SENS_X", UI_MENU_GYRO_SENS_X, 0.1f, 10, UI_MENU_GYRO_SENS_X_DESC, 0.1f, "%.1f");
             opt_slider("NX2NAVI_GYRO_SENS_Y", UI_MENU_GYRO_SENS_Y, 0.1f, 10, UI_MENU_GYRO_SENS_Y_DESC, 0.1f, "%.1f");
+            opt_slider("NX2NAVI_GYRO_DEADZONE", UI_MENU_GYRO_DEADZONE, 0, 10, UI_MENU_GYRO_DEADZONE_DESC, 0.1f, "%.1f");
+            opt_toggle("NX2NAVI_GYRO_TOUCH_HOLD", UI_MENU_GYRO_TOUCH_HOLD, UI_MENU_GYRO_TOUCH_HOLD_DESC);
         }
     }
     binds_rows(scale);

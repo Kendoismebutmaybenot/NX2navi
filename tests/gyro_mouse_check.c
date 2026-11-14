@@ -9,7 +9,8 @@
 #include "gyro_mouse.c"
 
 static const char *mode = "player", *scope = "always";
-static double sens_value = 1, sens_y = 1;
+static double sens_value = 1, sens_y = 1, deadzone_value = 0;
+static int touch, touch_hold_value = 1;
 static unsigned version = 1;
 static int motion_on = 1, patch_on = 1;
 static uint64_t clock_ns = 1000000000ull;
@@ -18,8 +19,10 @@ const char *cfg_value(const char *name) {
     return !strcmp(name, "NX2NAVI_GYRO_MODE") ? mode : !strcmp(name, "NX2NAVI_GYRO_SCOPE") ? scope : "";
 }
 double cfg_double(const char *name) {
-    return !strcmp(name, "NX2NAVI_GYRO_SENS_X") ? sens_value : !strcmp(name, "NX2NAVI_GYRO_SENS_Y") ? sens_y : 0;
+    return !strcmp(name, "NX2NAVI_GYRO_SENS_X") ? sens_value : !strcmp(name, "NX2NAVI_GYRO_SENS_Y") ? sens_y
+         : !strcmp(name, "NX2NAVI_GYRO_DEADZONE") ? deadzone_value : 0;
 }
+int cfg_bool(const char *name) { return strcmp(name, "NX2NAVI_GYRO_TOUCH_HOLD") ? 0 : touch_hold_value; }
 int input_motion_enabled(void) { return motion_on; }
 int input_direct_mouse_available(void) { return patch_on; }
 uint64_t plat_now_ns(void) { return clock_ns; }
@@ -34,7 +37,7 @@ static void run(const double w[3], const double up[3], double seconds, double de
     double acc[3] = {-up[0], -up[1], -up[2]};
     for (int i = 0; i < (int)(seconds * 250 + 0.5); i++) {
         clock_ns += 4000000;
-        gyro_mouse_feed(acc, w, up);
+        gyro_mouse_feed(acc, w, up, touch);
         if (i % 4 == 3) {   // the camera takes at 60-ish Hz; sum what it got
             double d[2];
             gyro_mouse_take(d);
@@ -112,9 +115,36 @@ int main(void) {
     run((const double[3]){0, 0, 1 * DEG + 45 * DEG}, flat, 1, deg);
     assert(near(deg[0], -45, 1) && near(bias[2], 1 * DEG, 0.1 * DEG));
 
+    // a dead zone of 5 degrees a second: a turn of 4 is dropped, a turn of 30 loses 5
+    deadzone_value = 5, version++;
+    bias[0] = bias[1] = bias[2] = 0, still_s = 0;
+    run((const double[3]){0, 0, 0}, upright, 0.1, warm);   // what the last section left pending is taken here
+    deg[0] = deg[1] = 0;
+    run((const double[3]){0, -4 * DEG, 0}, upright, 1, deg);
+    assert(fabs(deg[0]) < 1e-9);
+    deg[0] = deg[1] = 0;
+    run((const double[3]){0, -30 * DEG, 0}, upright, 1, deg);
+    assert(near(deg[0], 25, 0.5));
+    deadzone_value = 0, version++;
+
+    // a finger on the touchpad holds the turn; lifted, the turn goes on; with the setting off the finger does nothing
+    touch = 1;
+    run((const double[3]){0, 0, 0}, upright, 0.1, warm);
+    deg[0] = deg[1] = 0;
+    run((const double[3]){0, -30 * DEG, 0}, upright, 1, deg);
+    assert(deg[0] == 0 && deg[1] == 0);
+    touch = 0;
+    run((const double[3]){0, -30 * DEG, 0}, upright, 1, deg);
+    assert(near(deg[0], 30, 0.5));
+    touch = 1, touch_hold_value = 0, version++;
+    deg[0] = deg[1] = 0;
+    run((const double[3]){0, -30 * DEG, 0}, upright, 1, deg);
+    assert(near(deg[0], 30, 0.5));
+    touch = 0, touch_hold_value = 1, version++;
+
     // nothing takes for a while (a menu): what was turned meanwhile is dropped, not added at once afterwards
     double acc[3] = {0, 0, -1}, w[3] = {0, 0, 1 * DEG + 90 * DEG};
-    for (int i = 0; i < 100; i++) clock_ns += 4000000, gyro_mouse_feed(acc, w, flat);
+    for (int i = 0; i < 100; i++) clock_ns += 4000000, gyro_mouse_feed(acc, w, flat, 0);
     double d[2];
     gyro_mouse_take(d);
     assert(d[0] == 0 && d[1] == 0);

@@ -1505,11 +1505,19 @@ static void motion_main(void *arg) {
     for (;;) {
         plat_wait_ns(4000000);
         float a[3], g[3];
-        int have = 0;
+        int have = 0, touched = 0;
         plat_mutex_lock(&lock);
         if (pad && sdl_enter()) {   // no sample while SDL finds devices again
             have = SDL_GamepadConnected(pad) && sensors_ready() &&
                    SDL_GetGamepadSensorData(pad, SDL_SENSOR_ACCEL, a, 3) && SDL_GetGamepadSensorData(pad, SDL_SENSOR_GYRO, g, 3);
+            // A finger on the touchpad (DualSense, DualShock 4) holds the player space gyro (gyro_mouse.c).
+            if (have && SDL_GetNumGamepadTouchpads(pad) > 0) {
+                int fingers = SDL_GetNumGamepadTouchpadFingers(pad, 0);
+                for (int i = 0; i < fingers && !touched; i++) {
+                    bool down = false;
+                    if (SDL_GetGamepadTouchpadFinger(pad, 0, i, &down, NULL, NULL, NULL) && down) touched = 1;
+                }
+            }
             sdl_leave();
         }
         plat_mutex_unlock(&lock);
@@ -1520,7 +1528,7 @@ static void motion_main(void *arg) {
         if (gyro_mouse_on()) {   // player space gyro: the camera's turn (gyro_mouse.c)
             double up[3];
             motion_up(motion_global(), up);
-            gyro_mouse_feed(acc, gyro, up);
+            gyro_mouse_feed(acc, gyro, up, touched);
         }
     }
 }

@@ -15,8 +15,14 @@
 //
 // A still controller is not quite still in its readings: its gyro has a small bias. While the controller lies or is
 // held still (gravity alone on the accelerometer, the rate under STILL_RATE) for STILL_SECONDS, the rate is averaged into
-// the bias, which every sample loses. Nothing else is done to the rate: no dead zone, no smoothing, no slow-speed
-// scaling, so the camera turns exactly with the controller.
+// the bias, which every sample loses. Nothing else is done to the rate unless the player asks: no smoothing and, by
+// default, no dead zone, so the camera turns exactly with the controller.
+//
+// NX2NAVI_GYRO_DEADZONE (live, degrees a second, 0 = none): a turn slower than this is dropped and a faster one loses
+// this much of its speed, so the turn grows from nothing past the edge instead of jumping.
+// NX2NAVI_GYRO_TOUCH_HOLD (live, default on): while a finger rests on the gamepad's touchpad (input.c motion_main
+// reads it) nothing is turned, so the controller can be brought back to the centre and the turn goes on from there
+// when the finger lifts, as a mouse is lifted off the desk.
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
@@ -45,6 +51,8 @@ void gyro_player_space(const double w[3], const double up[3], double out[2]) {
 
 static int mode_player = -1, scope_aim;
 static double sens[2] = {2, 2};   // horizontal, vertical
+static double deadzone;           // degrees a second
+static int touch_hold = 1;
 static unsigned seen;
 
 static void settings(void) {
@@ -60,6 +68,9 @@ static void settings(void) {
         double s = cfg_double(names[i]);
         sens[i] = s < 0 ? 0 : s > 10 ? 10 : s;
     }
+    double d = cfg_double("NX2NAVI_GYRO_DEADZONE");
+    deadzone = d > 0 ? (d > 10 ? 10 : d) : 0;
+    touch_hold = cfg_bool("NX2NAVI_GYRO_TOUCH_HOLD");
 }
 
 int gyro_mouse_on(void) {
@@ -77,7 +88,7 @@ static double pending[2];   // degrees: right, up
 static double bias[3], still_s;
 static uint64_t last_feed, last_take;
 
-void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[3]) {
+void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[3], int touched) {
     settings();
     uint64_t now = plat_now_ns();
     plat_mutex_lock(&lock);
@@ -96,6 +107,10 @@ void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[
     } else still_s = 0;
     double ps[2];
     gyro_player_space(w, up, ps);
+    double speed = hypot(ps[0], ps[1]) * RAD_DEG;
+    double keep = deadzone <= 0 ? 1 : speed > deadzone ? (speed - deadzone) / speed : 0;
+    if (touched && touch_hold) keep = 0;   // the ratchet: the controller moves, the camera stays
+    for (int i = 0; i < 2; i++) ps[i] *= keep;
     if (last_take && now - last_take > STALE_NS) pending[0] = pending[1] = 0;
     else
         for (int i = 0; i < 2; i++) pending[i] += ps[i] * RAD_DEG * dt;

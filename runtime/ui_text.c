@@ -351,6 +351,13 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     [UI_MENU_GYRO_SENS_Y] = "Vertical sensitivity",
     [UI_MENU_GYRO_SENS_Y_DESC] = "Player space: degrees the camera turns up or down for each degree the controller "
                                  "tilts. The game's camera sensitivity options scale it as well.",
+    [UI_MENU_GYRO_TOUCH_HOLD] = "Touchpad pauses gyro",
+    [UI_MENU_GYRO_TOUCH_HOLD_DESC] = "Player space: while a finger rests on the touchpad (DualSense, DualShock 4) the "
+                                     "gyro stops turning the camera. Re-centre the controller, then lift the finger "
+                                     "to carry on, like lifting a mouse.",
+    [UI_MENU_GYRO_DEADZONE] = "Gyro dead zone",
+    [UI_MENU_GYRO_DEADZONE_DESC] = "Player space: turns slower than this many degrees a second are ignored, and faster "
+                                   "turns lose this much speed so there is no jump at the edge. 0 is none.",
     [UI_MENU_SPRINT_BUTTON] = "Sprint button",
     [UI_MENU_SPRINT_BUTTON_DESC] = "A button that makes Link sprint without rolling first. L3, the left stick's "
                                    "click, has no other use. The game's B button sprints only while Link moves and "

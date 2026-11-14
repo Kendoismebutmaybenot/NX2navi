@@ -5,8 +5,8 @@
 // 1 while NX2NAVI_GYRO_MODE is player, motion is on and the mouse camera's patch set runs (live).
 int gyro_mouse_on(void);
 // One sensor sample (input.c motion_main): acceleration in G, rate in rad/s, both in the Switch controller frame, and
-// the fusion's up direction in that frame.
-void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[3]);
+// the fusion's up direction in that frame; touched is 1 while a finger rests on the gamepad's touchpad.
+void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[3], int touched);
 // 1 while NX2NAVI_GYRO_SCOPE is aim: the turn counts only while the game's aiming camera is on (mouse_direct.c
 // camera_aiming).
 int gyro_mouse_aim_only(void);
