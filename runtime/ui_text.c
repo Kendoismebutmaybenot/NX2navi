@@ -337,9 +337,9 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     [UI_MENU_MOTION] = "Motion controls", [UI_MENU_MOTION_DESC] = "Aim with the controller's gyro.",
     [UI_MENU_GROUP_GYRO] = "Gyro",
     [UI_MENU_GYRO_MODE] = "Motion style",
-    [UI_MENU_GYRO_MODE_DESC] = "Game: the game's own gyro aiming. Player space: the gyro turns the camera like a mouse; "
-                               "turning the controller left or right turns the camera the same way "
-                               "however it is held, flat, upright or between.",
+    [UI_MENU_GYRO_MODE_DESC] = "Game: the game's own gyro aiming. Player space: an alternative gyro that turns the "
+                               "camera like a mouse, with no dead zone, for a much smoother result. Turning the "
+                               "controller left or right turns the camera the same way however it is held.",
     [UI_MENU_GYRO_GAME] = "Game", [UI_MENU_GYRO_PLAYER] = "Player space",
     [UI_MENU_GYRO_SCOPE] = "Gyro active",
     [UI_MENU_GYRO_SCOPE_DESC] = "Player space: Always turns the camera with the gyro at all times. When the game "
