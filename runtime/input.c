@@ -14,6 +14,7 @@
 #include <SDL3/SDL.h>
 
 #include "cfg.h"
+#include "gyro_mouse.h"
 #include "host.h"
 #include "input.h"
 #include "input_hd_pair.h"
@@ -1516,6 +1517,11 @@ static void motion_main(void *arg) {
         double acc[3], gyro[3];
         input_motion_axes(a, g, acc, gyro);
         motion_feed(motion_global(), acc, gyro, kern_now_ns());
+        if (gyro_mouse_on()) {   // player space gyro: the camera's turn (gyro_mouse.c)
+            double up[3];
+            motion_up(motion_global(), up);
+            gyro_mouse_feed(acc, gyro, up);
+        }
     }
 }
 

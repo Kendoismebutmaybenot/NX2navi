@@ -1686,6 +1686,13 @@ static void tab_controls(float scale) {
     bool restart;
     opt_choice("NX2NAVI_PROMPTS", UI_MENU_PROMPTS, prompts, 5, UI_MENU_PROMPTS_DESC, prompts_note(&restart));
     opt_toggle("NX2NAVI_MOTION", UI_MENU_MOTION, UI_MENU_MOTION_DESC);
+    // Player space gyro (gyro_mouse.c) goes through the mouse camera's patch set: offered while that runs.
+    if (input_direct_mouse_available()) {
+        static const UiTextId gyro_mode[] = {UI_MENU_GYRO_GAME, UI_MENU_GYRO_PLAYER};
+        opt_choice("NX2NAVI_GYRO_MODE", UI_MENU_GYRO_MODE, gyro_mode, 2, UI_MENU_GYRO_MODE_DESC);
+        if (!strcmp(cfg_value("NX2NAVI_GYRO_MODE"), "player"))
+            opt_slider("NX2NAVI_GYRO_SENS", UI_MENU_GYRO_SENS, 0.1f, 10, UI_MENU_GYRO_SENS_DESC, 0.1f, "%.1f");
+    }
     // The sprint button (sprint.c), where the game version has the patch set sprint; both rows are live. The names
     // follow the values in their cfg.c order.
     if (sprint_available()) {

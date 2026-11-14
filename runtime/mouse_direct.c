@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "cfg.h"
+#include "gyro_mouse.h"
 #include "host.h"
 #include "input.h"
 #include "input_wsys.h"
@@ -364,28 +365,39 @@ static void camera_input_oot(Cpu *c) {
     memcpy(&x, &c->v[1], sizeof x);
     memcpy(&y, &c->v[0], sizeof y);
     int32_t dx = 0, dy = 0;
+    // The game multiplies the processed stick by the frames it steps and by its camera speeds, which
+    // NX2NAVI_STICK_SENS scales (camera_speed.c): divided by both, a count or a degree of gyro turns the camera by the
+    // same angle at every frame rate and stick speed. Nothing after the site clamps the sum, so a fast flick is not cut
+    // short.
+    float per = frames * cam_speed_applied();
+    int usable = accept && isfinite(per) && per > 0;
     if (direct_mode()) {
         input_direct_mouse_sample(accept, &dx, &dy);
         float sensitivity = fminf(10, fmaxf(0, (float)cfg_double("NX2NAVI_MOUSE_SENS")));
-        // The game multiplies the processed stick by the frames it steps and by its camera speeds, which
-        // NX2NAVI_STICK_SENS scales (camera_speed.c): divided by both, a count turns the camera by the same angle at
-        // every frame rate and stick speed. Nothing after the site clamps the sum, so a fast flick is not cut short.
-        float per = frames * cam_speed_applied();
-        if (accept && sensitivity > 0 && isfinite(per) && per > 0 && (dx || dy)) {
-            mouse_input_object = object;
+        if (usable && sensitivity > 0 && (dx || dy)) {
             add[0] = dx * (float)INPUT_OOT_COUNT_X * sensitivity / per;
             add[1] = -dy * (float)INPUT_OOT_COUNT_Y * sensitivity / per;
-            float nx = x + add[0], ny = y + add[1];
-            uint32_t xb, yb;
-            memcpy(&xb, &nx, sizeof xb);
-            memcpy(&yb, &ny, sizeof yb);
-            c->v[1] = xb;
-            c->v[0] = yb;
-            static int logged;
-            if (!logged) {
-                logged = 1;
-                rt_log("mouse: direct camera input after the stick dead zone, clamp and exponent (Ocarina 1.1.1)");
-            }
+        }
+    }
+    // Player space gyro (gyro_mouse.c): its degrees in the same units, a processed stick of one turning the camera one
+    // degree up and 1.78 sideways a frame. Taken also while the camera takes no input, so no turn waits for it.
+    double gyro[2];
+    if (gyro_mouse_on() && gyro_mouse_take(gyro) && usable) {
+        add[0] += (float)(gyro[0] * (INPUT_OOT_COUNT_X / INPUT_OOT_COUNT_Y) / per);
+        add[1] += (float)(gyro[1] / per);
+    }
+    if (add[0] != 0 || add[1] != 0) {
+        mouse_input_object = object;
+        float nx = x + add[0], ny = y + add[1];
+        uint32_t xb, yb;
+        memcpy(&xb, &nx, sizeof xb);
+        memcpy(&yb, &ny, sizeof yb);
+        c->v[1] = xb;
+        c->v[0] = yb;
+        static int logged;
+        if (!logged) {
+            logged = 1;
+            rt_log("mouse: direct camera input after the stick dead zone, clamp and exponent (Ocarina 1.1.1)");
         }
     }
     if (mouse_trace())

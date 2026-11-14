@@ -14,6 +14,7 @@
 #include "debug_tools.h"
 #include "cfg.h"
 #include "gfx.h"
+#include "gyro_mouse.h"
 #include "host.h"
 #include "input.h"
 #include "ov.h"
@@ -479,7 +480,7 @@ static void ov_six_stop(Cpu *c) {
 static int six_fill(MotionState *s, int max, const uint32_t *h, const char *fn) {
     if (max <= 0) return 0;
     if (!s) rt_fatal("nn::hid::detail::%s: null output", fn);
-    int live = six_axis_ours(h, fn) && six_running && input_motion_enabled();
+    int live = six_axis_ours(h, fn) && six_running && input_motion_enabled() && !gyro_mouse_on();
     int n = live ? motion_read(motion_global(), s, max, kern_now_ns()) : 0;
     if (!n) {
         static const MotionState rest = {.acc = {0, 0, -1}, .dir = {1, 0, 0, 0, 1, 0, 0, 0, 1}};
