@@ -352,8 +352,7 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     [UI_MENU_GYRO_SENS_Y_DESC] = "Player space: degrees the camera turns up or down for each degree the controller "
                                  "tilts. The game's camera sensitivity options scale it as well.",
     [UI_MENU_GYRO_TOUCH_HOLD] = "Touchpad pauses gyro",
-    [UI_MENU_GYRO_TOUCH_HOLD_DESC] = "Player space: touch the touchpad to pause the gyro and re-centre the controller, "
-                                     "like lifting a mouse.",
+    [UI_MENU_GYRO_TOUCH_HOLD_DESC] = "Player space: touch the touchpad (DualSense, DualShock 4) to pause the gyro.",
     [UI_MENU_GYRO_DEADZONE] = "Gyro dead zone",
     [UI_MENU_GYRO_DEADZONE_DESC] = "Player space: ignores small, slow movements so the camera stays still while the "
                                    "controller is held still. 0 is off.",
