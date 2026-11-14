@@ -17,6 +17,7 @@
 #include "host.h"
 #include "input.h"
 #include "input_wsys.h"
+#include "layout.h"
 #include "platform/platform.h"
 
 #if __has_include("patches.h")
@@ -354,20 +355,38 @@ static int mouse_trace(void) {
 }
 
 // The game's aiming camera, for NX2NAVI_GYRO_SCOPE=aim: the camera input object's settings word (+0x218, which the
-// input update reads first) has bit 32 set while ZR holds an item's aim (the hookshot, and while its chain flies), where
-// the game turns its own gyro aiming on. While it is set this update's processed stick turns Link and the aim, one
-// stick sideways about 110 degrees a second as it turns the camera, so the gyro's degrees reach the aim unchanged.
-// Bit 30 is set only for the moment of a shot and bit 47 for a lock-on. Each change is logged.
+// input update reads first) has bit 32 set while ZR holds the hookshot's aim (and while its chain flies), where the
+// game turns its own gyro aiming on. The drawn bow changes neither that word nor Link's state, but Link's own aim word
+// (+0xf84 of the controlled Link) reads 3 while it is drawn and 4 while the hookshot aims, and 0 otherwise (also while
+// shielding, locked on, walking). While either is set this update's processed stick turns Link and the aim, one stick
+// sideways about 110 degrees a second as it turns the camera, so the gyro's degrees reach the aim unchanged. Bit 30 is
+// set only for the moment of a shot and bit 47 for a lock-on. Each change is logged.
 #define OOT_CAMERA_SETTINGS 0x218
 #define OOT_CAMERA_AIMING (1ull << 32)
+#define OOT_ACTOR_MGR 0x4c7e0d0ull   // main offset: the actor manager's slot; +0x470 names the controlled Link
+#define OOT_LINK_VTABLE 0x4b4dfc0ull // main offset: Link's actor class
+#define OOT_LINK_AIM 0xf84
+static uint64_t guest_ptr(uint64_t a) { return a && mem_readable(a, 8) ? *(const uint64_t *)(uintptr_t)a : 0; }
+// The controlled Link's aim word: [[[[[main+0x4c7e0d0]] +0x470] +0x18] +0x270] +0x358 is Link (his class checked), 0
+// when any step is missing.
+static int32_t link_aim(void) {
+    uint64_t p = guest_ptr(MOD_MAIN_BASE + OOT_ACTOR_MGR);
+    const uint64_t steps[] = {0, 0x470, 0x18, 0x270, 0x358};
+    for (size_t i = 0; i < sizeof steps / sizeof *steps && p; i++) p = guest_ptr(p + steps[i]);
+    if (!p || guest_ptr(p) != MOD_MAIN_BASE + OOT_LINK_VTABLE || !mem_readable(p + OOT_LINK_AIM, 4)) return 0;
+    int32_t aim;
+    memcpy(&aim, (const void *)(uintptr_t)(p + OOT_LINK_AIM), sizeof aim);
+    return aim;
+}
 static int camera_aiming(uint64_t object) {
     uint64_t word = 0;
     if (mem_readable(object + OOT_CAMERA_SETTINGS, 8)) memcpy(&word, (const void *)(uintptr_t)(object + OOT_CAMERA_SETTINGS), 8);
-    int aiming = (word & OOT_CAMERA_AIMING) != 0;
+    int32_t aim = link_aim();
+    int aiming = (word & OOT_CAMERA_AIMING) != 0 || aim != 0;
     static int last = -1;
     if (aiming != last) {
         last = aiming;
-        rt_log("gyro: the game's aiming camera is %s", aiming ? "on: the gyro turns the camera" : "off");
+        rt_log("gyro: the game's aiming camera is %s (Link's aim %d)", aiming ? "on: the gyro turns the camera" : "off", aim);
     }
     return aiming;
 }
