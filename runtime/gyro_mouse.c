@@ -8,6 +8,8 @@
 //
 // The sensor thread (input.c motion_main, 250 Hz) feeds each sample with the fusion's up direction
 // (motion_fusion.c motion_up); the camera input update takes the turn gathered since its last call, in degrees.
+// NX2NAVI_GYRO_SCOPE (live): always, or aim, only while Link is in a state the game's own gyro aiming works in
+// (mouse_direct.c link_aiming).
 // While the game's six-axis sensor would read it, the sensor reads at rest instead (ov_input.c six_fill), so the
 // game's own gyro aiming does not add a second turn.
 //
@@ -42,7 +44,7 @@ void gyro_player_space(const double w[3], const double up[3], double out[2]) {
     out[1] = w[0];                    // the top edge tilting up looks up
 }
 
-static int mode_player = -1;
+static int mode_player = -1, scope_aim;
 static double sens = 2;
 static unsigned seen;
 
@@ -52,6 +54,8 @@ static void settings(void) {
     seen = v;
     const char *m = cfg_value("NX2NAVI_GYRO_MODE");
     mode_player = m && !strcmp(m, "player");
+    const char *g = cfg_value("NX2NAVI_GYRO_SCOPE");
+    scope_aim = g && !strcmp(g, "aim");
     double s = cfg_double("NX2NAVI_GYRO_SENS");
     sens = s < 0 ? 0 : s > 10 ? 10 : s;
 }
@@ -59,6 +63,11 @@ static void settings(void) {
 int gyro_mouse_on(void) {
     settings();
     return mode_player && input_motion_enabled() && input_direct_mouse_available();
+}
+
+int gyro_mouse_aim_only(void) {
+    settings();
+    return scope_aim;
 }
 
 static PlatMutex lock = PLAT_MUTEX_INIT;

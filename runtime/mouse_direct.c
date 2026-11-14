@@ -17,6 +17,7 @@
 #include "host.h"
 #include "input.h"
 #include "input_wsys.h"
+#include "layout.h"
 #include "platform/platform.h"
 
 #if __has_include("patches.h")
@@ -353,6 +354,44 @@ static int mouse_trace(void) {
     return on;
 }
 
+// Link's state for NX2NAVI_GYRO_SCOPE=aim: 1 while it is one the game's own gyro aiming works in. The controlled Link
+// comes from the actor manager ([[main+0x4c7e0d0]], class main+0x4bdfe68) at +0x470 (class main+0x4b49698), whose
+// +0x18 is Link's owner; his state id is at [[[owner +0x270] +0x188] +0x1c0] +0x28 (+0x4c when that reads 0x11a, a
+// state that wraps another), as sprint.c state_kind reads it. The ids follow the game's state name table
+// (main+0x4b4abc8, one name pointer per id). Every change of the answer is logged with the id, for checking in game.
+static uint64_t guest_load64(uint64_t a) { return a && mem_readable(a, 8) ? guest_pointer(a) : 0; }
+static int link_aiming(void) {
+    uint64_t slot = guest_load64(MOD_MAIN_BASE + 0x4c7e0d0), mgr = guest_load64(slot), p = 0;
+    if (mgr && guest_load64(mgr) == MOD_MAIN_BASE + 0x4bdfe68) {
+        uint64_t ctl = guest_load64(mgr + 0x470);
+        if (ctl && guest_load64(ctl) == MOD_MAIN_BASE + 0x4b49698) p = guest_load64(ctl + 0x18);
+    }
+    if (p) p = guest_load64(p + 0x270);
+    if (p) p = guest_load64(p + 0x188);
+    if (p) p = guest_load64(p + 0x1c0);
+    int32_t id = 0;
+    if (p && mem_readable(p + 0x28, 0x28)) {
+        memcpy(&id, (const void *)(uintptr_t)(p + 0x28), sizeof id);
+        if (id == 0x11a) memcpy(&id, (const void *)(uintptr_t)(p + 0x4c), sizeof id);
+    }
+    int aiming = 0;
+    switch (id) {
+    case 5:     // HookshotShoot
+    case 6:     // UseHookshot
+    case 59:    // UseBow
+    case 60:    // UseTool: the slingshot and the other items aimed in first person
+    case 72:    // LookAround: the first-person view
+    case 181:   // DrawnBow
+        aiming = 1;
+    }
+    static int last = -1;
+    if (aiming != last) {
+        last = aiming;
+        rt_log("gyro: Link state %d, %s", id, aiming ? "aiming: the gyro turns the camera" : "not aiming");
+    }
+    return aiming;
+}
+
 static void camera_input_oot(Cpu *c) {
     mouse_input_object = 0;
     uint64_t object = c->x[20], now = plat_now_ns();
@@ -380,9 +419,10 @@ static void camera_input_oot(Cpu *c) {
         }
     }
     // Player space gyro (gyro_mouse.c): its degrees in the same units, a processed stick of one turning the camera one
-    // degree up and 1.78 sideways a frame. Taken also while the camera takes no input, so no turn waits for it.
+    // degree up and 1.78 sideways a frame. Taken also while the camera takes no input or Link does not aim (with
+    // NX2NAVI_GYRO_SCOPE=aim), so no turn waits for it.
     double gyro[2];
-    if (gyro_mouse_on() && gyro_mouse_take(gyro) && usable) {
+    if (gyro_mouse_on() && gyro_mouse_take(gyro) && usable && (!gyro_mouse_aim_only() || link_aiming())) {
         add[0] += (float)(gyro[0] * (INPUT_OOT_COUNT_X / INPUT_OOT_COUNT_Y) / per);
         add[1] += (float)(gyro[1] / per);
     }

@@ -1690,8 +1690,11 @@ static void tab_controls(float scale) {
     if (input_direct_mouse_available()) {
         static const UiTextId gyro_mode[] = {UI_MENU_GYRO_GAME, UI_MENU_GYRO_PLAYER};
         opt_choice("NX2NAVI_GYRO_MODE", UI_MENU_GYRO_MODE, gyro_mode, 2, UI_MENU_GYRO_MODE_DESC);
-        if (!strcmp(cfg_value("NX2NAVI_GYRO_MODE"), "player"))
+        if (!strcmp(cfg_value("NX2NAVI_GYRO_MODE"), "player")) {
+            static const UiTextId gyro_scope[] = {UI_MENU_GYRO_ALWAYS, UI_MENU_GYRO_AIM};
+            opt_choice("NX2NAVI_GYRO_SCOPE", UI_MENU_GYRO_SCOPE, gyro_scope, 2, UI_MENU_GYRO_SCOPE_DESC);
             opt_slider("NX2NAVI_GYRO_SENS", UI_MENU_GYRO_SENS, 0.1f, 10, UI_MENU_GYRO_SENS_DESC, 0.1f, "%.1f");
+        }
     }
     // The sprint button (sprint.c), where the game version has the patch set sprint; both rows are live. The names
     // follow the values in their cfg.c order.

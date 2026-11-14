@@ -8,13 +8,15 @@
 
 #include "gyro_mouse.c"
 
-static const char *mode = "player";
+static const char *mode = "player", *scope = "always";
 static double sens_value = 1;
 static unsigned version = 1;
 static int motion_on = 1, patch_on = 1;
 static uint64_t clock_ns = 1000000000ull;
 unsigned cfg_version(void) { return version; }
-const char *cfg_value(const char *name) { return strcmp(name, "NX2NAVI_GYRO_MODE") ? "" : mode; }
+const char *cfg_value(const char *name) {
+    return !strcmp(name, "NX2NAVI_GYRO_MODE") ? mode : !strcmp(name, "NX2NAVI_GYRO_SCOPE") ? scope : "";
+}
 double cfg_double(const char *name) { return strcmp(name, "NX2NAVI_GYRO_SENS") ? 0 : sens_value; }
 int input_motion_enabled(void) { return motion_on; }
 int input_direct_mouse_available(void) { return patch_on; }
@@ -71,7 +73,10 @@ int main(void) {
     patch_on = 1, mode = "game", version++;
     assert(!gyro_mouse_on());
     mode = "player", version++;
-    assert(gyro_mouse_on());
+    assert(gyro_mouse_on() && !gyro_mouse_aim_only());
+    scope = "aim", version++;
+    assert(gyro_mouse_on() && gyro_mouse_aim_only());
+    scope = "always", version++;
 
     // feed and take: 30 degrees a second to the right for a second, held upright
     double deg[2] = {0, 0}, warm[2] = {0, 0};

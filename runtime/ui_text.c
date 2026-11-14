@@ -336,10 +336,15 @@ static const char *const text_en[UI_TEXT_COUNT] = {
 
     [UI_MENU_MOTION] = "Motion controls", [UI_MENU_MOTION_DESC] = "Aim with the controller's gyro.",
     [UI_MENU_GYRO_MODE] = "Motion style",
-    [UI_MENU_GYRO_MODE_DESC] = "Game: the game's own gyro aiming. Player space: the gyro turns the camera like a mouse, "
-                               "at all times; turning the controller left or right turns the camera the same way "
+    [UI_MENU_GYRO_MODE_DESC] = "Game: the game's own gyro aiming. Player space: the gyro turns the camera like a mouse; "
+                               "turning the controller left or right turns the camera the same way "
                                "however it is held, flat, upright or between.",
     [UI_MENU_GYRO_GAME] = "Game", [UI_MENU_GYRO_PLAYER] = "Player space",
+    [UI_MENU_GYRO_SCOPE] = "Gyro active",
+    [UI_MENU_GYRO_SCOPE_DESC] = "Player space: Always turns the camera with the gyro at all times. When the game "
+                                "allows turns it only where the game's own gyro aiming works: aiming the bow, "
+                                "slingshot or hookshot, and the first-person view.",
+    [UI_MENU_GYRO_ALWAYS] = "Always", [UI_MENU_GYRO_AIM] = "When the game allows",
     [UI_MENU_GYRO_SENS] = "Gyro sensitivity",
     [UI_MENU_GYRO_SENS_DESC] = "Player space: degrees the camera turns for each degree the controller turns. The "
                                "game's camera sensitivity options scale it as well.",
