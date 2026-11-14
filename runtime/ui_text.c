@@ -335,6 +335,7 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     [UI_MENU_CHANNELS_AUTO] = "Automatic", [UI_MENU_CHANNELS_STEREO] = "Stereo", [UI_MENU_CHANNELS_51] = "5.1 surround",
 
     [UI_MENU_MOTION] = "Motion controls", [UI_MENU_MOTION_DESC] = "Aim with the controller's gyro.",
+    [UI_MENU_GROUP_GYRO] = "Gyro",
     [UI_MENU_GYRO_MODE] = "Motion style",
     [UI_MENU_GYRO_MODE_DESC] = "Game: the game's own gyro aiming. Player space: the gyro turns the camera like a mouse; "
                                "turning the controller left or right turns the camera the same way "
