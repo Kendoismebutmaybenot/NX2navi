@@ -354,12 +354,13 @@ static int mouse_trace(void) {
 }
 
 // The game's aiming camera, for NX2NAVI_GYRO_SCOPE=aim: the camera input object's settings word (+0x218, which the
-// input update reads first) has bit 32 set while ZR holds an item's aim (the hookshot, and while its chain flies), where
-// the game turns its own gyro aiming on. While it is set this update's processed stick turns Link and the aim, one
-// stick sideways about 110 degrees a second as it turns the camera, so the gyro's degrees reach the aim unchanged.
-// Bit 30 is set only for the moment of a shot and bit 47 for a lock-on. Each change is logged.
+// input update reads first) has bit 32 set while ZR holds the hookshot's aim (and while its chain flies) and bit 16
+// while the bow is drawn, where the game turns its own gyro aiming on; Link's state stays Wait or Walk for both. While
+// either is set this update's processed stick turns Link and the aim, one stick sideways about 110 degrees a second as
+// it turns the camera, so the gyro's degrees reach the aim unchanged. Bit 30 is set only for the moment of a hookshot
+// shot, bits 47 and 23 for a lock-on, and bits 25 and 26 with them for the shield. Each change is logged.
 #define OOT_CAMERA_SETTINGS 0x218
-#define OOT_CAMERA_AIMING (1ull << 32)
+#define OOT_CAMERA_AIMING ((1ull << 32) | (1ull << 16))
 static int camera_aiming(uint64_t object) {
     uint64_t word = 0;
     if (mem_readable(object + OOT_CAMERA_SETTINGS, 8)) memcpy(&word, (const void *)(uintptr_t)(object + OOT_CAMERA_SETTINGS), 8);
