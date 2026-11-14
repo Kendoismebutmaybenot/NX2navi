@@ -8,7 +8,7 @@
 
 #include "gyro_mouse.c"
 
-static const char *mode = "player", *scope = "always";
+static const char *mode = "player", *scope = "always", *space_value = "player";
 static double sens_value = 1, sens_y = 1, deadzone_value = 0, tighten_value = 0;
 static int touch, touch_hold_value = 1;
 static unsigned version = 1;
@@ -16,7 +16,8 @@ static int motion_on = 1, patch_on = 1;
 static uint64_t clock_ns = 1000000000ull;
 unsigned cfg_version(void) { return version; }
 const char *cfg_value(const char *name) {
-    return !strcmp(name, "NX2NAVI_GYRO_MODE") ? mode : !strcmp(name, "NX2NAVI_GYRO_SCOPE") ? scope : "";
+    return !strcmp(name, "NX2NAVI_GYRO_MODE") ? mode : !strcmp(name, "NX2NAVI_GYRO_SCOPE") ? scope
+         : !strcmp(name, "NX2NAVI_GYRO_SPACE") ? space_value : "";
 }
 double cfg_double(const char *name) {
     return !strcmp(name, "NX2NAVI_GYRO_SENS_X") ? sens_value : !strcmp(name, "NX2NAVI_GYRO_SENS_Y") ? sens_y
@@ -69,6 +70,42 @@ int main(void) {
     // pitch is the x axis
     gyro_player_space((const double[3]){0.5, 0, 0}, upright, out);
     assert(near(out[1], 0.5, 1e-9) && near(out[0], 0, 1e-9));
+
+    // world space: the whole turn about the vertical (no let-out), and a level pitch axis while rolled sideways
+    gyro_space_turn(GYRO_SPACE_WORLD, (const double[3]){0, 1, 0}, tilt, out);
+    assert(near(out[0], -sqrt(0.5), 1e-9));                // no let-out, unlike player space
+    const double rolled[3] = {sqrt(0.5), 0, sqrt(0.5)};    // rolled 45 degrees sideways
+    gyro_space_turn(GYRO_SPACE_WORLD, (const double[3]){0.5 * sqrt(0.5), 0, -0.5 * sqrt(0.5)}, rolled, out);
+    assert(near(out[1], 0.5, 1e-9) && near(out[0], 0, 1e-9));   // a tilt about the level axis: all pitch, no turn
+    gyro_space_turn(GYRO_SPACE_WORLD, (const double[3]){0.5, 0, 0}, rolled, out);
+    assert(near(out[1], 0.5 * sqrt(0.5), 1e-9));               // about the rolled x axis: its level share
+    // local spaces: the face's axis (dial), the top edge's axis (wheel), both; pitch the x axis
+    gyro_space_turn(GYRO_SPACE_YAW, (const double[3]){0.3, 0.2, 1}, flat, out);
+    assert(near(out[0], -1, 1e-9) && near(out[1], 0.3, 1e-9));
+    gyro_space_turn(GYRO_SPACE_ROLL, (const double[3]){0, 0.4, 1}, flat, out);
+    assert(near(out[0], 0.4, 1e-9));                        // the right side going down turns right
+    gyro_space_turn(GYRO_SPACE_YAW_ROLL, (const double[3]){0, 0.4, 1}, flat, out);
+    assert(near(out[0], 0.4 - 1, 1e-9));
+    // the laser pointer: up and down follow the top edge's elevation, so tilting up 10 degrees and back returns to 0
+    // whatever the rate reads (here none at all), and the dead zone and tightening leave it alone
+    space_value = "laser", deadzone_value = 5, tighten_value = 5, version++;
+    {
+        double d[2], sum = 0, acc0[3] = {0, 0, -1}, w0[3] = {0, 0, 0};
+        gyro_mouse_take(d);   // a first take: the ones after it count (gyro_mouse_take drops a stale one)
+        for (int step = 0; step <= 10; step++) {   // tilt up 10 degrees, one a sample
+            double a = step * DEG, up_t[3] = {0, sin(a), cos(a)};
+            clock_ns += 4000000, gyro_mouse_feed(acc0, w0, up_t, 0, 0.004);
+        }
+        gyro_mouse_take(d), sum += d[1];
+        assert(near(sum, 10, 1e-6));
+        for (int step = 10; step >= 0; step--) {
+            double a = step * DEG, up_t[3] = {0, sin(a), cos(a)};
+            clock_ns += 4000000, gyro_mouse_feed(acc0, w0, up_t, 0, 0.004);
+        }
+        gyro_mouse_take(d), sum += d[1];
+        assert(near(sum, 0, 1e-6));
+    }
+    space_value = "player", deadzone_value = 0, tighten_value = 0, version++;
 
     // the gates
     assert(gyro_mouse_on());

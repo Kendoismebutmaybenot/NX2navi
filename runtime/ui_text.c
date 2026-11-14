@@ -337,27 +337,37 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     [UI_MENU_MOTION] = "Motion controls", [UI_MENU_MOTION_DESC] = "Aim with the controller's gyro.",
     [UI_MENU_GROUP_GYRO] = "Gyro",
     [UI_MENU_GYRO_MODE] = "Motion style",
-    [UI_MENU_GYRO_MODE_DESC] = "Game: the game's own gyro aiming. Player space: an alternative gyro that turns the "
-                               "camera like a mouse, with no dead zone, for a much smoother result.",
-    [UI_MENU_GYRO_GAME] = "Game", [UI_MENU_GYRO_PLAYER] = "Player space",
+    [UI_MENU_GYRO_MODE_DESC] = "Original: the game's own gyro aiming. Custom: an alternative gyro that turns the "
+                               "camera like a mouse, with no dead zone, for a much smoother result, in the gyro space "
+                               "of your choice.",
+    [UI_MENU_GYRO_GAME] = "Original", [UI_MENU_GYRO_PLAYER] = "Custom",
+    [UI_MENU_GYRO_SPACE] = "Gyro space",
+    [UI_MENU_GYRO_SPACE_DESC] = "Custom: how turning the controller turns the camera. Player space works the same "
+                                "however the controller is held. World space follows the real vertical exactly. Local "
+                                "yaw turns with the controller flat like a dial, local roll by tilting it like a "
+                                "wheel, local yaw + roll with both. Laser pointer aims where the controller points, "
+                                "with no dead zone or tightening.",
+    [UI_MENU_GYRO_SPACE_PLAYER] = "Player space", [UI_MENU_GYRO_SPACE_WORLD] = "World space",
+    [UI_MENU_GYRO_SPACE_YAW] = "Local yaw", [UI_MENU_GYRO_SPACE_ROLL] = "Local roll",
+    [UI_MENU_GYRO_SPACE_YAW_ROLL] = "Local yaw + roll", [UI_MENU_GYRO_SPACE_LASER] = "Laser pointer",
     [UI_MENU_GYRO_SCOPE] = "Gyro active",
-    [UI_MENU_GYRO_SCOPE_DESC] = "Player space: Always turns the camera with the gyro at all times. When the game "
+    [UI_MENU_GYRO_SCOPE_DESC] = "Custom: Always turns the camera with the gyro at all times. When the game "
                                 "allows turns it only while the game aims an item, where the game's own gyro "
                                 "aiming would be on.",
     [UI_MENU_GYRO_ALWAYS] = "Always", [UI_MENU_GYRO_AIM] = "When the game allows",
     [UI_MENU_GYRO_SENS_X] = "Horizontal sensitivity",
-    [UI_MENU_GYRO_SENS_X_DESC] = "Player space: degrees the camera turns left or right for each degree the controller "
+    [UI_MENU_GYRO_SENS_X_DESC] = "Custom: degrees the camera turns left or right for each degree the controller "
                                  "turns. The game's camera sensitivity options scale it as well.",
     [UI_MENU_GYRO_SENS_Y] = "Vertical sensitivity",
-    [UI_MENU_GYRO_SENS_Y_DESC] = "Player space: degrees the camera turns up or down for each degree the controller "
+    [UI_MENU_GYRO_SENS_Y_DESC] = "Custom: degrees the camera turns up or down for each degree the controller "
                                  "tilts. The game's camera sensitivity options scale it as well.",
     [UI_MENU_GYRO_TOUCH_HOLD] = "Touchpad pauses gyro",
-    [UI_MENU_GYRO_TOUCH_HOLD_DESC] = "Player space: touch the touchpad (DualSense, DualShock 4) to pause the gyro.",
+    [UI_MENU_GYRO_TOUCH_HOLD_DESC] = "Custom: touch the touchpad (DualSense, DualShock 4) to pause the gyro.",
     [UI_MENU_GYRO_DEADZONE] = "Gyro dead zone",
-    [UI_MENU_GYRO_DEADZONE_DESC] = "Player space: ignores small, slow movements so the camera stays still while the "
+    [UI_MENU_GYRO_DEADZONE_DESC] = "Custom: ignores small, slow movements so the camera stays still while the "
                                    "controller is held still. 0 is off.",
     [UI_MENU_GYRO_TIGHTEN] = "Gyro tightening",
-    [UI_MENU_GYRO_TIGHTEN_DESC] = "Player space: softens very slow movements to smooth out hand shake, without "
+    [UI_MENU_GYRO_TIGHTEN_DESC] = "Custom: softens very slow movements to smooth out hand shake, without "
                                   "slowing normal aiming. 0 is off.",
     [UI_MENU_SPRINT_BUTTON] = "Sprint button",
     [UI_MENU_SPRINT_BUTTON_DESC] = "A button that makes Link sprint without rolling first. L3, the left stick's "

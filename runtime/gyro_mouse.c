@@ -1,5 +1,17 @@
-// Player space gyro (NX2NAVI_GYRO_MODE=player, live): the gamepad's gyro turns the camera through the mouse camera's
-// path (mouse_direct.c camera_input_oot) instead of reaching the game as its six-axis sensor. Yaw follows the turn
+// Custom gyro (NX2NAVI_GYRO_MODE=player, the menu's Custom, live): the gamepad's gyro turns the camera through the
+// mouse camera's path (mouse_direct.c camera_input_oot) instead of reaching the game as its six-axis sensor.
+// NX2NAVI_GYRO_SPACE (live) picks how the controller's rotation becomes a turn left or right and up or down
+// (gyro_space_turn):
+//   player    (the default) player space, below.
+//   world     the turn about the real vertical, whole, and the tilt about the controller's left-right axis made level.
+//   yaw       local space: the turn about the axis out of the controller's face (a flat controller turned like a dial).
+//   roll      local space: the roll about the axis out of its top edge (a flat controller turned like a wheel).
+//   yaw_roll  local space: the two added.
+//   laser     a pointer: the turn about the real vertical as in world space, and up or down the change of the angle the
+//             top edge points above the horizon, read from gravity, so pointing back at a spot brings the aim back to
+//             it with no drift; no dead zone or tightening, which would move the pointer off where the controller points.
+// Pitch is the tilt about the controller's own left-right axis in every space but world and laser.
+// Player space: yaw follows the turn
 // about the real vertical, wherever the controller points: the turn about gravity, measured on the controller's two
 // axes other than its pitch axis (x), then let out up to twice its size (a 60 degree buffer) but never past the
 // combined rate of those two axes, so a turn the hands make by rolling the controller sideways counts as well as one made by twisting it
@@ -56,7 +68,36 @@ void gyro_player_space(const double w[3], const double up[3], double out[2]) {
     out[1] = w[0];                    // the top edge tilting up looks up
 }
 
-static int mode_player = -1, scope_aim;
+// World space: the whole turn about the real vertical, and the tilt about the controller's left-right axis with its
+// vertical part taken off, so a controller held rolled sideways still looks up when its top edge rises.
+static void gyro_world_space(const double w[3], const double up[3], double out[2]) {
+    double n = sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2]);
+    double u[3] = {n > 0 ? up[0] / n : 0, n > 0 ? up[1] / n : 0, n > 0 ? up[2] / n : 1};
+    out[0] = -(w[0] * u[0] + w[1] * u[1] + w[2] * u[2]);
+    double side[3] = {1 - u[0] * u[0], -u[0] * u[1], -u[0] * u[2]};   // the left-right axis, level
+    double s = sqrt(side[0] * side[0] + side[1] * side[1] + side[2] * side[2]);
+    out[1] = s > 1e-6 ? (w[0] * side[0] + w[1] * side[1] + w[2] * side[2]) / s : w[0];
+}
+
+void gyro_space_turn(int space, const double w[3], const double up[3], double out[2]) {
+    switch (space) {
+    case GYRO_SPACE_WORLD: case GYRO_SPACE_LASER: gyro_world_space(w, up, out); return;
+    case GYRO_SPACE_YAW: out[0] = -w[2], out[1] = w[0]; return;            // counter-clockwise from above: left
+    case GYRO_SPACE_ROLL: out[0] = w[1], out[1] = w[0]; return;            // the right side going down: right
+    case GYRO_SPACE_YAW_ROLL: out[0] = w[1] - w[2], out[1] = w[0]; return;
+    default: gyro_player_space(w, up, out); return;
+    }
+}
+
+// Laser pointer: the angle, in degrees, the controller's top edge points above the horizon.
+static double elevation_deg(const double up[3]) {
+    double n = sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2]);
+    double e = n > 0 ? up[1] / n : 0;
+    return asin(e < -1 ? -1 : e > 1 ? 1 : e) * RAD_DEG;
+}
+
+static int mode_player = -1, scope_aim, space;
+static const char *const space_names[] = {"player", "world", "yaw", "roll", "yaw_roll", "laser"};
 static double sens[2] = {2, 2};   // horizontal, vertical
 static double deadzone, tighten = 1.5;  // degrees a second
 static int touch_hold = 1;
@@ -70,6 +111,10 @@ static void settings(void) {
     mode_player = m && !strcmp(m, "player");
     const char *g = cfg_value("NX2NAVI_GYRO_SCOPE");
     scope_aim = g && !strcmp(g, "aim");
+    const char *sp = cfg_value("NX2NAVI_GYRO_SPACE");
+    space = GYRO_SPACE_PLAYER;
+    for (int i = 0; i < (int)(sizeof space_names / sizeof *space_names); i++)
+        if (sp && !strcmp(sp, space_names[i])) space = i;
     static const char *const names[2] = {"NX2NAVI_GYRO_SENS_X", "NX2NAVI_GYRO_SENS_Y"};
     for (int i = 0; i < 2; i++) {
         double s = cfg_double(names[i]);
@@ -112,6 +157,8 @@ int gyro_mouse_owns_sensor(void) {
 static PlatMutex lock = PLAT_MUTEX_INIT;
 static double pending[2];   // degrees: right, up
 static double bias[3], still_s;
+static double laser_elev;     // laser pointer: the elevation at the last sample
+static int laser_have;        // ... which is set
 static uint64_t last_take;
 
 void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[3], int touched, double dt) {
@@ -129,17 +176,27 @@ void gyro_mouse_feed(const double acc[3], const double gyro[3], const double up[
             for (int i = 0; i < 3; i++) bias[i] += k * w[i], w[i] -= k * w[i];
         }
     } else still_s = 0;
-    double ps[2];
-    gyro_player_space(w, up, ps);
-    double speed = hypot(ps[0], ps[1]) * RAD_DEG;
-    double keep = deadzone <= 0 ? 1 : speed > deadzone ? (speed - deadzone) / speed : 0;
-    double left = speed * keep;   // the speed past the dead zone
-    if (tighten > 0 && left < tighten) keep *= left / tighten;
+    double ps[2], add[2];
+    gyro_space_turn(space, w, up, ps);
+    int laser = space == GYRO_SPACE_LASER;
+    double keep = 1;
+    if (!laser) {   // a pointer follows the controller exactly: no dead zone or tightening
+        double speed = hypot(ps[0], ps[1]) * RAD_DEG;
+        keep = deadzone <= 0 ? 1 : speed > deadzone ? (speed - deadzone) / speed : 0;
+        double left = speed * keep;   // the speed past the dead zone
+        if (tighten > 0 && left < tighten) keep *= left / tighten;
+    }
     if (touched && touch_hold) keep = 0;   // the ratchet: the controller moves, the camera stays
-    for (int i = 0; i < 2; i++) ps[i] *= keep;
+    add[0] = ps[0] * keep * RAD_DEG * dt;
+    add[1] = ps[1] * keep * RAD_DEG * dt;
+    if (laser) {   // up and down from where the top edge points, which gravity gives without drift
+        double e = elevation_deg(up);
+        add[1] = laser_have && dt > 0 ? (e - laser_elev) * keep : 0;
+        laser_elev = e, laser_have = 1;
+    } else laser_have = 0;
     if (last_take && now - last_take > STALE_NS) pending[0] = pending[1] = 0;
     else
-        for (int i = 0; i < 2; i++) pending[i] += ps[i] * RAD_DEG * dt;
+        for (int i = 0; i < 2; i++) pending[i] += add[i];
     plat_mutex_unlock(&lock);
 }
 

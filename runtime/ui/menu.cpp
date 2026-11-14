@@ -1715,8 +1715,8 @@ static void tab_controls(float scale) {
     // (input.c walk_get)
     row_walk_key();
     opt_slider("NX2NAVI_WALK_SCALE", UI_MENU_WALK_SCALE, 0.2f, 0.9f, UI_MENU_WALK_SCALE_DESC, 0.01f, "%.2f");
-    // Gyro: motion controls and player space gyro (gyro_mouse.c), whose rows go through the mouse camera's patch set
-    // and are offered while that runs.
+    // Gyro: motion controls and the custom gyro (gyro_mouse.c), whose rows go through the mouse camera's patch set and
+    // are offered while that runs.
     opt_group(UI_MENU_GROUP_GYRO);
     opt_toggle("NX2NAVI_MOTION", UI_MENU_MOTION, UI_MENU_MOTION_DESC);
     if (input_direct_mouse_available()) {
@@ -1725,6 +1725,10 @@ static void tab_controls(float scale) {
         if (!strcmp(cfg_value("NX2NAVI_GYRO_MODE"), "player")) {
             static const UiTextId gyro_scope[] = {UI_MENU_GYRO_ALWAYS, UI_MENU_GYRO_AIM};
             opt_choice("NX2NAVI_GYRO_SCOPE", UI_MENU_GYRO_SCOPE, gyro_scope, 2, UI_MENU_GYRO_SCOPE_DESC);
+            static const UiTextId gyro_space[] = {UI_MENU_GYRO_SPACE_PLAYER, UI_MENU_GYRO_SPACE_WORLD,
+                                                  UI_MENU_GYRO_SPACE_YAW, UI_MENU_GYRO_SPACE_ROLL,
+                                                  UI_MENU_GYRO_SPACE_YAW_ROLL, UI_MENU_GYRO_SPACE_LASER};
+            opt_choice("NX2NAVI_GYRO_SPACE", UI_MENU_GYRO_SPACE, gyro_space, 6, UI_MENU_GYRO_SPACE_DESC);
             opt_slider("NX2NAVI_GYRO_SENS_X", UI_MENU_GYRO_SENS_X, 0.1f, 10, UI_MENU_GYRO_SENS_X_DESC, 0.1f, "%.1f");
             opt_slider("NX2NAVI_GYRO_SENS_Y", UI_MENU_GYRO_SENS_Y, 0.1f, 10, UI_MENU_GYRO_SENS_Y_DESC, 0.1f, "%.1f");
             opt_slider("NX2NAVI_GYRO_DEADZONE", UI_MENU_GYRO_DEADZONE, 0, 10, UI_MENU_GYRO_DEADZONE_DESC, 0.1f, "%.1f");

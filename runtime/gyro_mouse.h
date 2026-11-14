@@ -22,3 +22,8 @@ int gyro_mouse_owns_sensor(void);
 int gyro_mouse_take(double deg[2]);
 // The rate w (rad/s) in player space: out[0] the turn to the right, out[1] the turn up, rad/s.
 void gyro_player_space(const double w[3], const double up[3], double out[2]);
+// NX2NAVI_GYRO_SPACE, in the order of its values (cfg.c).
+enum { GYRO_SPACE_PLAYER, GYRO_SPACE_WORLD, GYRO_SPACE_YAW, GYRO_SPACE_ROLL, GYRO_SPACE_YAW_ROLL, GYRO_SPACE_LASER };
+// The rate w (rad/s) as a turn in that space: out[0] to the right, out[1] up, rad/s (the laser pointer's out[1] is the
+// world space one; gyro_mouse_feed takes its up and down from the elevation instead).
+void gyro_space_turn(int space, const double w[3], const double up[3], double out[2]);
